@@ -101,8 +101,8 @@ async def admit_internal_event(adapter: Any, event: Any) -> None:
     """
     event._gateway_accepted = False
     # Read before handle_message: a drain can begin during its awaits before the store (Telegram
-    # topic recovery, the ingress burst gate, the busy handler's profile scope). That wake still
-    # gets a receipt, so a read afterwards would leave it unmarked and the drain would drop it.
+    # topic recovery, the busy handler's profile scope). That wake still gets a receipt, so a read
+    # afterwards would leave it unmarked and the drain would drop it.
     runner = getattr(adapter, "gateway_runner", None)
     draining_before = getattr(runner, "_draining", False) is True
     await adapter.handle_message(event)
