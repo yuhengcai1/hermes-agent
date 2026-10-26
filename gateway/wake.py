@@ -47,7 +47,8 @@ PERMANENT_REFUSAL_REASONS = frozenset({'not_found', 'invalid_params'})
 
 class WakeNotAccepted(RuntimeError):
     """No adapter admission: retry without treating a healthy chat as dead. ``reason`` is the
-    store's refusal code when the session authority refused it (None: the adapter did not accept);
+    store's refusal code when the session authority refused it, ``runtime_draining`` when the
+    adapter path refused it during a drain (None: the adapter did not accept);
     ``permanent`` is set once the refusal is proven final (``refusal_proven_permanent``)."""
 
     def __init__(self, message: str = "internal wake not accepted by adapter", *, reason: Optional[str] = None):
@@ -108,9 +109,9 @@ async def admit_internal_event(adapter: Any, event: Any) -> None:
     if event._gateway_accepted is not True:
         raise WakeNotAccepted()
     # handle_message can await before it claims or queues the event (Telegram topic recovery, the
-    # ingress burst gate, the busy handler's profile scope); every in-tree path then stores it and
-    # returns without awaiting. A drain seen here began before the store, so the drain gate refuses
-    # the claimed turn or discards the queued follow-up: refuse it so the producer retries it.
+    # busy handler's profile scope). A drain seen here dooms the stored event: the drain gate refuses
+    # a claimed turn and the pending discard drops a queued follow-up. Refuse it so the producer
+    # retries it after the restart.
     if _runner_draining(adapter):
         raise WakeNotAccepted("gateway began draining during admission; retry after restart",
                               reason="runtime_draining")

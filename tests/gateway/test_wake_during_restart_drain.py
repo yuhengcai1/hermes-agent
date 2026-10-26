@@ -153,8 +153,9 @@ async def test_wake_is_refused_when_drain_starts_after_the_busy_handler_queued_i
         return handled
 
     adapter._busy_session_handler = store_then_drain
-    with pytest.raises(WakeNotAccepted):
+    with pytest.raises(WakeNotAccepted) as refused:
         await deliver_wake(adapter, text="[kanban] Task t_1 completed.", source=source)
+    assert "during admission" in str(refused.value)  # the post-admission re-check fired
     event, text = await runner._run_agent_drain_pending(
         {"final_response": "done"}, adapter, source, key
     )
