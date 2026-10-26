@@ -1149,10 +1149,17 @@ def suppress_credential_source(provider_id: str, source: str) -> None:
 
 def is_source_suppressed(provider_id: str, source: str) -> bool:
     """Check if a credential source has been suppressed by the user."""
+    return source in suppressed_credential_sources(provider_id)
+
+
+def suppressed_credential_sources(provider_id: str) -> frozenset[str]:
+    """Every credential source the user suppressed for *provider_id* (unreadable store = none)."""
     try:
-        return source in _load_auth_store().get("suppressed_sources", {}).get(provider_id, [])
-    except Exception:
-        return False
+        section = _load_auth_store().get("suppressed_sources")
+    except OSError:  # unreadable store (logged by the loader): nothing to honour, as before
+        return frozenset()
+    listed = section.get(provider_id) if isinstance(section, dict) else None
+    return frozenset(map(str, listed)) if isinstance(listed, (list, dict)) else frozenset()
 
 
 def unsuppress_credential_source(provider_id: str, source: str) -> bool:
