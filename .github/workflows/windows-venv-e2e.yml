@@ -59,6 +59,14 @@ jobs:
           test-environment: 'true'
           prune-python-cache: true
 
+      - name: pain5-l3a red/green tests (TEMPORARY, never merges)
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          set -uo pipefail
+          bash scripts/run_tests.sh tests/pm/test_held_identical_entry_windows_live.py tests/pm/test_publish_entry.py tests/gateway/test_status_strict_identity_live.py -- -v -rA || echo "TESTS_EXIT=$?"
+          python scripts/ps1_hold_probe.py || true
+
       - name: Run venv-holder live E2E
         # Canonical runner (scripts/run_tests.sh) — never bare pytest: it
         # enforces credential hygiene, TZ, temp HERMES_HOME and subprocess
